@@ -67,6 +67,12 @@
   <div id="report"></div>
 </div>
 
+<div class="card">
+  <h3>📤 成绩报告(发给爸爸)</h3>
+  <button class="btn" onclick="genReport()">生成报告</button>
+  <div id="report-out" class="hide" style="margin-top:10px;"></div>
+</div>
+
 <div class="foot">大得意的学习小屋 · 数据保存在本机 · 每天练一点,进步看得见</div>
 
 <script>
@@ -250,6 +256,49 @@ function renderReport(){
 }
 
 load(); renderMap(); renderWrong(); renderReport();
+
+function genReport(){
+  var SUB = {math:'数学', yw:'语文', yy:'英语'};
+  var lines = ['📊 大得意的学习报告 ' + new Date().toLocaleDateString(), ''];
+  var totalQ = 0, totalR = 0;
+  ['math','yw','yy'].forEach(function(sid){
+    var rights = 0, totals = 0;
+    UNITS[sid].forEach(function(u){
+      var rec = DB.done[uid2(sid,u.id)];
+      if(rec){ rights += rec.right; totals += rec.total; }
+    });
+    if(!totals) return;
+    totalQ += totals; totalR += rights;
+    var pct = Math.round(rights/totals*100);
+    lines.push('【'+SUB[sid]+'】练'+totals+'题 对'+rights+' 正确率'+pct+'%');
+    var strong = [], weak = [];
+    UNITS[sid].forEach(function(u){
+      var rec = DB.done[uid2(sid,u.id)];
+      if(!rec || !rec.total) return;
+      var p = Math.round(rec.right/rec.total*100);
+      if(p >= 90) strong.push(u.name+p+'%');
+      if(p < 60) weak.push(u.name+p+'%');
+    });
+    if(strong.length) lines.push('  强项:'+strong.join('、'));
+    if(weak.length) lines.push('  弱项:'+weak.join('、'));
+    if(!strong.length && !weak.length) lines.push('  刚起步,继续练~');
+  });
+  if(!totalQ){ lines.push('还没有练习记录,先去知识点地图练一组吧~'); }
+  else {
+    lines.push('');
+    lines.push('总结:共练'+totalQ+'题,对'+totalR+',整体正确率'+Math.round(totalR/totalQ*100)+'%');
+  }
+  var out = document.getElementById('report-out');
+  out.classList.remove('hide');
+  out.innerHTML = '<textarea id="report-txt" style="width:100%;height:180px;font-size:13px;padding:8px;border:1px solid #f0d8b0;border-radius:8px;">'+lines.join('\n')+'</textarea><br><button class="btn" style="margin-top:8px;" onclick="copyReport()">复制报告</button><div class="exp">复制后去微信粘贴发给爸爸就行</div>';
+}
+function copyReport(){
+  var t = document.getElementById('report-txt');
+  t.select();
+  try{ document.execCommand('copy'); alert('已复制!去微信粘贴发给爸爸吧'); }
+  catch(e){ alert('长按文本框里的文字,手动复制'); }
+}
+function uid2(sid, pid){ return sid + '_' + pid; }
 </script>
 </body>
 </html>
